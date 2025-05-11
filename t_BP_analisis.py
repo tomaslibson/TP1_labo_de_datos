@@ -18,8 +18,9 @@ con = duckdb.connect()
 
 
 consulta = con.execute("""
-               SELECT DISTINCT anio_actualizacion
+               SELECT  cod_localidad
                FROM tabla_BP
+               WHERE cod_localidad IS NULL
               
                """ ).fetchdf()
                
@@ -83,6 +84,12 @@ p3 = con.execute("""
                 ORDER BY cantidad
                 """ ).fetchdf()            
                
+########################
+
+
+
+
+
 
 biblioteca = 'Bib.Pop. D.F.Sarmiento'
 
@@ -177,3 +184,63 @@ prob_mailaux = con.execute("""
                 """ ).fetchdf() 
 
 
+
+########################333
+
+
+prob_cod_localidad = con.execute("""
+                  
+                SELECT DISTINCT cod_localidad, localidad, COUNT(*) AS cantidad
+                FROM tabla_BP
+                GROUP BY cod_localidad, localidad
+                ORDER BY cantidad
+                """ ).fetchdf()            
+               
+########CLAVE PRIMARIA#############
+
+clave_prim = con.execute("""
+                  
+                SELECT DISTINCT cod_localidad, id_provincia, id_departamento
+                FROM tabla_BP
+                """ ).fetchdf() 
+                
+prueba_clave = con.execute("""
+                  
+                SELECT  
+        cod_localidad,
+        SUBSTR(CAST(cod_localidad AS TEXT), 1, 1) AS id_provincia,
+        SUBSTR(CAST(cod_localidad AS TEXT), 1, 4) AS id_departamento,
+        FROM tabla_BP
+                
+                """ ).fetchdf()
+                
+tabla_prov = prueba_clave = con.execute("""
+                  
+                SELECT  id_departamento
+                FROM tabla_BP
+                
+                """ ).fetchdf()
+                
+prueba_provincia = con.execute("""
+                               
+                SELECT id_departamento
+                FROM prueba_clave
+                INTERSECT ALL
+                SELECT id_departamento
+                FROM tabla_prov
+        
+                
+                """ ).fetchdf()
+         
+            
+#######################
+         
+
+fecha_fundacion_null= con.execute("""
+                               
+                SELECT fecha_fundacion
+                FROM tabla_BP
+                WHERE fecha_fundacion IS  NULL
+        
+                
+                """ ).fetchdf()
