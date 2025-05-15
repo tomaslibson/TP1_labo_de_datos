@@ -36,7 +36,7 @@ nulos_mail = con.execute("""
                
               
 
-nulos_telefono = con.execute("""
+nulos_telefonofake = con.execute("""
                SELECT Teléfono 
                FROM tabla_EE
                WHERE Teléfono IS NULL
@@ -63,5 +63,44 @@ ambitonull = con.execute("""
                WHERE Ámbito  IS NULL
                """ ).fetchdf()
      
-
+telefonos_validos = con.execute("""
+               SELECT COUNT(*) AS cantidad_validos
+               FROM tabla_EE
+               WHERE LENGTH(REGEXP_REPLACE(Teléfono, '[^0-9]', '', 'g')) = 10
+               """).fetchdf()
+ 
                
+telefonos_Novalidos = con.execute("""
+               SELECT COUNT(*) AS cantidad_validos
+               FROM tabla_EE
+               WHERE LENGTH(REGEXP_REPLACE(Teléfono, '[^0-9]', '', 'g')) != 10
+               """).fetchdf()           
+
+
+Establecimientos = con.execute("""
+               SELECT Cueanexo, Nombre, Jurisdicción, Departamento
+               FROM tabla_EE
+              
+               """ ).fetchdf()
+               
+               
+Deptos =  con.execute("""
+               SELECT Departamento, "Código de Departamento"
+               FROM tabla_EE
+              
+               """ ).fetchdf()          
+               
+               
+ejercicio1 = con.execute("""
+        SELECT 
+        Jurisdicción,
+        Departamento,
+        COUNT(CASE WHEN "Nivel inicial - Jardín maternal" = 1 OR "Nivel inicial - Jardín de infantes" THEN 1 END) AS Cant_Jardines,
+        COUNT(CASE WHEN Primario = 1 THEN 1 END) AS Cant_Primarias,
+        COUNT(CASE WHEN Secundario = 1 THEN 1 END) AS Cant_Secundarias
+        FROM tabla_EE
+        GROUP BY Jurisdicción, Departamento
+        ORDER BY Jurisdicción, Departamento;
+               """ ).fetchdf()
+
+
