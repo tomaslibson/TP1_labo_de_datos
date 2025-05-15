@@ -244,3 +244,88 @@ fecha_fundacion_null= con.execute("""
         
                 
                 """ ).fetchdf()
+                
+                
+#Metricas de calidad##
+
+#M1
+
+#domicilios sin altura, sin calle o sin ambas
+domicilios_incompletos = con.execute ("""
+                  
+                  SELECT domicilio
+                  FROM tabla_BP
+                  WHERE LOWER(domicilio)  LIKE '%sin %' 
+                  OR LOWER(domicilio)  LIKE '% sin%'  
+                  OR domicilio IS NULL
+                  OR NOT REGEXP_MATCHES(domicilio, '[0-9]') 
+                  OR NOT REGEXP_MATCHES(domicilio, '[A-Za-z]')  
+                  OR REGEXP_MATCHES(LOWER(domicilio), 's\n')   
+
+    """).fetchdf()
+    
+cant_dom_inc = len(domicilios_incompletos)    
+
+cant_tot_domicilios = len(tabla_BP)
+
+cant_dom_completos = cant_tot_domicilios - cant_dom_inc
+
+M1 = (cant_dom_completos / cant_tot_domicilios) *100 # 10% de los datos de domicilio estan incompletos
+# el 89 % de los datos estan completos, es decir, mas del 10% esta incompleto
+
+
+#M2###########
+
+#dommicilios sin el dato altura
+domicilios_sin_altura = con.execute ("""
+                  
+                  SELECT domicilio, COUNT(*) AS cantidad
+                  FROM tabla_BP
+                  WHERE NOT REGEXP_MATCHES(domicilio, '[0-9]')  
+                  GROUP BY domicilio
+                  ORDER BY cantidad DESC
+                  
+
+    """).fetchdf()
+
+
+domicilios_por_cant = con.execute ("""
+                  
+                  SELECT domicilio, COUNT(*) AS cantidad
+                  FROM tabla_BP
+                  GROUP BY domicilio
+                  ORDER BY cantidad DESC
+                  
+    """).fetchdf()
+    
+    
+#domicilios con repeticiones    
+domicilios_cant_mayo_1 = con.execute ("""
+                  
+                  SELECT *
+                  FROM domicilios_por_cant
+                  WHERE cantidad > 1
+                  
+    """).fetchdf()
+
+#domicilios repetidos y sin altura que no son incompletos
+
+domicilios_repetidos_sinaltura = con.execute ("""
+                  
+                  SELECT domicilio
+                  FROM tabla_BP
+                  WHERE ( domicilio IN (SELECT domicilio FROM domicilios_cant_mayo_1)
+                  OR domicilio IN (SELECT domicilio FROM domicilios_sin_altura) )
+                  AND domicilio NOT IN (SELECT domicilio FROM domicilios_incompletos)
+                  
+    """).fetchdf()
+
+
+
+cant_domicilios_repetidos_sinaltura = len(domicilios_repetidos_sinaltura)
+
+M2 = (cant_domicilios_repetidos_sinaltura / cant_tot_domicilios) * 100
+
+#el 2% de los dato son inconcistentes
+
+#Conclusion: el 12% de los datos de domicilio genera problemas de Calidad de Datos
