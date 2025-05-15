@@ -329,3 +329,17 @@ M2 = (cant_domicilios_repetidos_sinaltura / cant_tot_domicilios) * 100
 #el 2% de los dato son inconcistentes
 
 #Conclusion: el 12% de los datos de domicilio genera problemas de Calidad de Datos
+
+
+#####CLAVE PPRINCIPAL
+
+clave_prin =  con.execute ("""
+                  
+                  SELECT nro_conabip, COUNT(*) as cantidad
+                  FROM tabla_BP
+                  GROUP BY nro_conabip
+                  ORDER BY cantidad 
+                  
+    """).fetchdf()
+    
+#conqbip es clave principal
