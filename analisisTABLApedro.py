@@ -8,9 +8,9 @@ Created on Thu May  8 10:25:16 2025
 import pandas as pd
 import duckdb
 
-tabla_BP = pd.read_csv("/home/Estudiante/Descargas/tabla_BP.csv", encoding="latin1")
+tabla_BP = pd.read_csv("C:/Users/pedro/OneDrive/Documentos/A LABODATOS/tabla_BP.csv", encoding="latin1")
 
-tabla_EE = pd.read_csv("/home/Estudiante/Descargas/tabla_EE.csv", skiprows= 12) 
+tabla_EE = pd.read_csv("C:/Users/pedro/OneDrive/Documentos/A LABODATOS/tabla_EE.csv", skiprows= 12) 
 
 con = duckdb.connect()
 
@@ -62,7 +62,10 @@ ambitonull = con.execute("""
                FROM tabla_EE
                WHERE Ámbito  IS NULL
                """ ).fetchdf()
-     
+
+        
+#CHEQUEO LA COLUMNA TELEFONOS 
+
 telefonos_validos = con.execute("""
                SELECT COUNT(*) AS cantidad_validos
                FROM tabla_EE
@@ -76,7 +79,20 @@ telefonos_Novalidos = con.execute("""
                WHERE LENGTH(REGEXP_REPLACE(Teléfono, '[^0-9]', '', 'g')) != 10
                """).fetchdf()           
 
+#CHEQUEO LA COLUMNA MAILS
 
+testtomi = con.execute("""
+               SELECT Mail 
+               FROM tabla_EE
+               WHERE Mail NOT LIKE '%@%' OR Mail IS NULL
+               
+               
+               """ ).fetchdf()
+
+
+# defino las tablas en las que voy a descomponer:
+
+    
 Establecimientos = con.execute("""
                SELECT Cueanexo, Nombre, Jurisdicción, Departamento
                FROM tabla_EE
@@ -90,6 +106,12 @@ Deptos =  con.execute("""
               
                """ ).fetchdf()          
                
+nivel_educativo = con.execute("""
+               SELECT  Cueanexo, "Nivel inicial - Jardín maternal", "Nivel inicial - Jardín de infantes", Primario, Secundario
+               FROM tabla_EE
+              
+               """ ).fetchdf()               
+               
                
 ejercicio1 = con.execute("""
         SELECT 
@@ -102,5 +124,9 @@ ejercicio1 = con.execute("""
         GROUP BY Jurisdicción, Departamento
         ORDER BY Jurisdicción, Departamento;
                """ ).fetchdf()
+
+#OJO este codigo saca la data de la tabla original, habria que ver como conseguir el mismo resultado pero a partir de las tablas que descompuse.
+#OSEA habria que sacar la data de "Establecimientos" y de "nivel_educativo". Se hace con un join????
+
 
 
