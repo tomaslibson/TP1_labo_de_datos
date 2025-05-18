@@ -94,26 +94,65 @@ testtomi = con.execute("""
 
     
 Establecimientos = con.execute("""
-               SELECT Cueanexo, Nombre, Jurisdicción, Departamento
-               FROM tabla_EE
-              
-               """ ).fetchdf()
+               SELECT
+               Cueanexo,
+               Nombre,
+               CASE 
+               WHEN Departamento ILIKE 'Comuna %' THEN '02000'
+               ELSE "Código de departamento"
+               END AS "Código de departamento",
+               "Nivel inicial - Jardín maternal", "Nivel inicial - Jardín de infantes", Primario, Secundario
+               FROM tabla_EE;
+               """).fetchdf()
+
                
                
-Deptos =  con.execute("""
-               SELECT Departamento, "Código de Departamento"
+Departamentos = con.execute("""
+            SELECT DISTINCT
+            CASE 
+            WHEN Departamento ILIKE 'Comuna %' THEN '02000'
+            ELSE "Código de departamento"
+            END AS "Código de departamento",
+            CASE 
+            WHEN Departamento ILIKE 'Comuna %' THEN 'CIUDAD AUTÓNOMA DE BUENOS AIRES'
+            ELSE Departamento
+            END AS Departamento
+            
+            FROM tabla_EE
+            GROUP BY 1, 2
+            ORDER BY 1;
+            """).fetchdf()
+       
+Provinciapaso1 = con.execute("""
+               SELECT DISTINCT
+               CASE
+               WHEN Departamento ILIKE 'Comuna %' THEN '02000'
+               ELSE "Código de departamento"
+               END AS "Código de departamento",
+               Jurisdicción,
+               CASE
+               WHEN Departamento ILIKE 'Comuna %' THEN 'CIUDAD AUTÓNOMA DE BUENOS AIRES'
+               ELSE Departamento
+               END AS Departamento
                FROM tabla_EE
-              
-               """ ).fetchdf()          
-               
-nivel_educativo = con.execute("""
-               SELECT  Cueanexo, "Nivel inicial - Jardín maternal", "Nivel inicial - Jardín de infantes", Primario, Secundario
-               FROM tabla_EE
+               GROUP BY "Código de departamento", Jurisdicción, Departamento
+               ORDER BY "Código de departamento", Jurisdicción, Departamento
               
                """ ).fetchdf()
 
+Provincias = con.execute("""
+               SELECT "Código de departamento", 
+               Jurisdicción
+               FROM Provinciapaso1
+              
+               """ ).fetchdf()            
+               
+
+               
+
+
 con.register("Establecimientos", Establecimientos)
-con.register("nivel_educativo", nivel_educativo)               
+               
                
                
 ejercicio1 = con.execute("""
@@ -134,19 +173,25 @@ ejercicio1 = con.execute("""
                
 
 #prubo  hacer un join a partir del esquema que hice
-joineamos = con.execute("""
-        SELECT 
-        e.Jurisdicción,
-        e.Departamento,
-        COUNT(CASE WHEN n."Nivel inicial - Jardín maternal" = 1 
-                     OR n."Nivel inicial - Jardín de infantes" = 1 THEN 1 END) AS Cant_Jardines,
-        COUNT(CASE WHEN n.Primario = 1 THEN 1 END) AS Cant_Primarias,
-        COUNT(CASE WHEN n.Secundario = 1 THEN 1 END) AS Cant_Secundarias
-        FROM Establecimientos e
-        JOIN nivel_educativo n ON e.Cueanexo = n.Cueanexo
-        GROUP BY e.Jurisdicción, e.Departamento
-        ORDER BY e.Jurisdicción, e.Departamento;
-               """).fetchdf()
+
+#Join1 = con.execute("""
+ #       SELECT 
+    #    e.Departamento,
+     #   COUNT(CASE WHEN n."Nivel inicial - Jardín maternal" = 1 
+      #               OR n."Nivel inicial - Jardín de infantes" = 1 THEN 1 END) AS Cant_Jardines,
+       # COUNT(CASE WHEN n.Primario = 1 THEN 1 END) AS Cant_Primarias,
+        #COUNT(CASE WHEN n.Secundario = 1 THEN 1 END) AS Cant_Secundarias
+        #FROM Establecimientos e
+        #JOIN nivel_educativo n ON e.Cueanexo = n.Cueanexo
+        #GROUP BY  e.Departamento
+        # ORDER BY  e.Departamento;
+         #      """).fetchdf()
+
+#con.register("Join1" , Join1)
 
 
 
+
+
+               
+               
