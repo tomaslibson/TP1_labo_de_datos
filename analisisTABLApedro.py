@@ -174,18 +174,18 @@ ejercicio1 = con.execute("""
 
 #prubo  hacer un join a partir del esquema que hice
 
-#Join1 = con.execute("""
- #       SELECT 
-    #    e.Departamento,
-     #   COUNT(CASE WHEN n."Nivel inicial - Jardín maternal" = 1 
-      #               OR n."Nivel inicial - Jardín de infantes" = 1 THEN 1 END) AS Cant_Jardines,
-       # COUNT(CASE WHEN n.Primario = 1 THEN 1 END) AS Cant_Primarias,
-        #COUNT(CASE WHEN n.Secundario = 1 THEN 1 END) AS Cant_Secundarias
-        #FROM Establecimientos e
-        #JOIN nivel_educativo n ON e.Cueanexo = n.Cueanexo
-        #GROUP BY  e.Departamento
-        # ORDER BY  e.Departamento;
-         #      """).fetchdf()
+Join1 = con.execute("""
+       SELECT 
+       e.Departamento,
+        COUNT(CASE WHEN n."Nivel inicial - Jardín maternal" = 1 
+                     OR n."Nivel inicial - Jardín de infantes" = 1 THEN 1 END) AS Cant_Jardines,
+        COUNT(CASE WHEN n.Primario = 1 THEN 1 END) AS Cant_Primarias,
+        COUNT(CASE WHEN n.Secundario = 1 THEN 1 END) AS Cant_Secundarias
+        FROM Establecimientos e
+        JOIN nivel_educativo n ON e.Cueanexo = n.Cueanexo
+        GROUP BY  e.Departamento
+        ORDER BY  e.Departamento;
+               """).fetchdf()
 
 #con.register("Join1" , Join1)
 

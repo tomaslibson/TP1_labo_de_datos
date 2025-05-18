@@ -14,6 +14,18 @@ tabla_BP = pd.read_csv(carpeta+"tabla_BP.csv")
 
 tabla_EE = pd.read_csv(carpeta+"tabla_EE.csv", skiprows= 11)
 
+
+
+tabla_EE.columns = tabla_EE.iloc[0]
+
+tabla_EE = tabla_EE[1:]
+
+tabla_EE = tabla_EE.reset_index(drop=True)
+
+
+
+
+
 con = duckdb.connect()
 
 
@@ -342,4 +354,83 @@ clave_prin =  con.execute ("""
                   
     """).fetchdf()
     
-#conqbip es clave principal
+#conqbip es clave principa
+
+# id departamento 
+
+id_BP = con.execute ("""
+                  
+                  SELECT DISTINCT "Código de departamento"
+                  FROM tabla_EE
+                  
+                  
+    """).fetchdf()
+
+
+
+#capital como departmento Repetido
+
+
+capitla_BP = con.execute ("""
+                  
+                  SELECT DISTINCT provincia, departamento
+                  FROM tabla_BP
+                  WHERE LOWER(departamento) = 'capital'
+                  
+                  
+    """).fetchdf()
+    
+capitla_EE = con.execute ("""
+                  
+                  SELECT DISTINCT Jurisdicción, Departamento
+                  FROM tabla_EE
+                  WHERE LOWER(Departamento) = 'capital'
+                  
+                  
+    """).fetchdf()
+
+#deptos repetidos
+
+rep_dep = con.execute ("""
+                  
+                  SELECT id_departamento,departamento, COUNT(*) AS cantidad
+                  FROM tabla_BP
+                  GROUP BY id_departamento, departamento
+                  ORDER BY cantidad
+                  
+                  
+    """).fetchdf()
+    
+    
+
+#Tablas Esquemas
+
+tabla_BP_limpia  =  con.execute ("""
+                  
+                  SELECT nro_conabip, id_departamento, mail, fecha_fundacion
+                  FROM tabla_BP
+                  ORDER BY nro_conabip
+                  
+                  
+    """).fetchdf()
+    
+
+tabla_departamento = con.execute ("""
+                  
+                  SELECT DISTINCT id_departamento, departamento
+                  FROM tabla_BP
+                  ORDER BY id_departamento
+                  
+    """).fetchdf()
+    
+tabla_provincia = con.execute ("""
+                  
+                  SELECT DISTINCT id_provincia, provincia
+                  FROM tabla_BP
+                  ORDER BY id_provincia
+                  
+    """).fetchdf()
+    
+
+## pruebas EE
+
