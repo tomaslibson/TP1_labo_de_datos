@@ -23,15 +23,16 @@ carpeta = "C:\\Users\\libso\\OneDrive\\Escritorio\\ubaTarea\\Labo_de_datos\\TP1_
 con = duckdb.connect()
 
 #JARDIN
-Jardin = pd.read_excel(carpeta+ "GE_Jardin.xlsX", header = 10)
+Jardin = pd.read_excel(carpeta+ "GE_Jardin.xlsX", header = 10)  #le saco el titulo de la tabla y demas.
 
-Jardin = Jardin.drop(Jardin.columns[0], axis =1)
+
+Jardin = Jardin.drop(Jardin.columns[0], axis =1) #acomodo para nombrar las columnas
 
 Jardin.columns = Jardin.iloc[0]
 
-Jardin = Jardin[1:]
+Jardin = Jardin[1:] 
 
-Jardin = Jardin.rename(columns = {'C1' : 'Poblacion'})
+Jardin = Jardin.rename(columns = {'C1' : 'Poblacion'}) #Renombro la columna con la informacion de la Poblacion
 
 
 
@@ -45,6 +46,7 @@ Jardin = Jardin[15:].reset_index(drop=True)
 
 Jardin = pd.concat([nueva_fila_Jardin, Jardin], ignore_index = True)
 
+Jardin = Jardin.iloc[:-5,] #Le saco las ultimas filas, TOTAL y vacias.
 
 #PRIMARIA
 Primaria = pd.read_excel(carpeta+ "GE_Primaria.xlsX", header = 10)
@@ -67,6 +69,7 @@ Primaria = Primaria[15:].reset_index(drop=True)
 
 Primaria = pd.concat([nueva_fila_Primaria, Primaria], ignore_index = True)
 
+Primaria = Primaria.iloc[:-5,] 
 
 #SECUNDARIA
 Secundaria = pd.read_excel(carpeta+ "GE_Secundaria.xlsX", header = 10)
@@ -89,6 +92,7 @@ Secundaria = Secundaria[15:].reset_index(drop=True)
 
 Secundaria = pd.concat([nueva_fila_Secundaria, Secundaria], ignore_index = True)
 
+Secundaria = Secundaria.iloc[:-5,] 
 
 #ADULTOS
 
@@ -112,13 +116,14 @@ Adultos = Adultos[15:].reset_index(drop=True)
 
 Adultos = pd.concat([nueva_fila_Adultos, Adultos], ignore_index = True)
 
+Adultos = Adultos.iloc[:-5,] 
 
 # 1 a 15 index son comunas, quiero ju ntar todas las filas,  
 
 
 tabla_pob =  con.execute("""
                SELECT 
-               Jardin.Código,
+               Jardin.Código AS id_departamento,
                Jardin.Departamento,
                Jardin.Poblacion AS poblacion_Jardin,
                Primaria.Poblacion AS poblacion_Primaria,
@@ -131,6 +136,7 @@ tabla_pob =  con.execute("""
 
 
                """ ).fetchdf()
+               
                
 tabla_pob['poblacion_tot'] = tabla_pob.iloc[:, -4] + tabla_pob.iloc[:, -3] + tabla_pob.iloc[:, -2]  + tabla_pob.iloc[:, -1]
 
@@ -155,6 +161,7 @@ Bibliotecas  =  con.execute ("""
     """).fetchdf()
    
 con.register("Bibliotecas", Bibliotecas)
+
 ##Tabla EE###
 
 tabla_EE = pd.read_csv(carpeta+"tabla_EE.csv", skiprows = 12)
@@ -198,8 +205,9 @@ Departamentos = con.execute("""
 con.register("Departamentos", Departamentos)
 ###EJERCICIO 1#####
 
-dale = con.execute("""
-    SELECT 
+join1_1 = con.execute("""
+        SELECT 
+        d.id_departamento,
         d.Provincia,
         d.Departamento,
         
@@ -213,13 +221,54 @@ dale = con.execute("""
         COUNT(CASE WHEN e.Secundario = 1 THEN 1 END) AS cantidad_secundarias
         
     FROM Establecimientos e
-    JOIN tabla_departamentos d
+    JOIN Departamentos d
       ON e.id_departamento = d.id_departamento
-      
-    GROUP BY d.Provincia, d.Departamento
-    ORDER BY d.Provincia, cantidad_primarias
+    GROUP BY d.id_departamento, d.Provincia, d.Departamento
+    ORDER BY d.Provincia , cantidad_primarias 
 """).fetchdf()
 
 
+join1_2 =  con.execute("""
+                       SELECT 
+                       j.Provincia,
+                       j.Departamento,
+                       j.cantidad_jardines AS Jardines,
+                       p.poblacion_Jardin AS "Poblacion Jardines",
+                       j.cantidad_primarias AS Primarias,
+                       p.poblacion_Primaria AS "Poblacion Primaria",
+                       j.cantidad_secundarias AS Secundarias,
+                       p.poblacion_Secundaria AS "Poblacion Secundaria"
+                       
+                       FROM join1_1 j
+                       LEFT JOIN Poblacion p
+                         ON j.id_departamento = p.id_departamento
+                         
+                       ORDER BY Provincia ASC , Primarias DESC  
+                      
+""").fetchdf()
+
+
+####notas###
+
+#Departamentos sin informacion de poblacion
+
+dep_sin1=  con.execute("""
+                       SELECT id_departamento
+                       FROM Departamentos
+                       EXCEPT ALL  
+                       SELECT id_departamento
+                       FROM Poblacion
+                    
+                      
+""").fetchdf()
+
+
+dep_sin2 = con.execute("""
+                       SELECT id_departamento, Departamento
+                       FROM Departamentos
+                       WHERE id_departamento = 94
+                    
+                      
+""").fetchdf()
 
     
