@@ -15,7 +15,7 @@ Created on Thu May 15 13:40:25 2025
 import pandas as pd
 import duckdb
 import matplotlib.pyplot as plt
-
+import numpy as np
 
 ###POBLACION####
 
@@ -24,20 +24,20 @@ carpeta = "C:\\Users\\libso\\OneDrive\\Escritorio\\ubaTarea\\Labo_de_datos\\TP1_
 con = duckdb.connect()
 
 #JARDIN
-Jardin = pd.read_excel(carpeta+ "GE_Jardin.xlsX", header = 10)  #le saco el titulo de la tabla y demas.
+Jardin = pd.read_excel(carpeta+ "GE_Jardin.xlsX", header = 10)  #le saco el titulo de la tabla y demas informacion inutil
 
 
-Jardin = Jardin.drop(Jardin.columns[0], axis =1) #acomodo para nombrar las columnas
+Jardin = Jardin.drop(Jardin.columns[0], axis =1) #Acomodamos para nombrar las columnas
 
 Jardin.columns = Jardin.iloc[0]
 
 Jardin = Jardin[1:] 
 
-Jardin = Jardin.rename(columns = {'C1' : 'Poblacion'}) #Renombro la columna con la informacion de la Poblacion
+Jardin = Jardin.rename(columns = {'C1' : 'Poblacion'}) #Renombramos la columna con la informacion de la Poblacion
 
 
 
-#Agrego fila de CABA resumiendo la informacion de las filas de Comunas 
+#Agregamos fila de CABA resumiendo la informacion de las filas de Comunas 
 
 suma_Jardin = Jardin.loc[0:15 , 'Poblacion'].sum()
 
@@ -49,6 +49,8 @@ Jardin = pd.concat([nueva_fila_Jardin, Jardin], ignore_index = True)
 
 Jardin = Jardin.iloc[:-5,] #Le saco las ultimas filas, TOTAL y vacias.
 
+#Repetimos lo mismo para las otras 3 tablas
+
 #PRIMARIA
 Primaria = pd.read_excel(carpeta+ "GE_Primaria.xlsX", header = 10)
 
@@ -59,8 +61,6 @@ Primaria.columns = Primaria.iloc[0]
 Primaria = Primaria[1:]
 
 Primaria = Primaria.rename(columns = {'C1' : 'Poblacion'})
-
-#Agrego fila de CABA resumiendo la informacion de las filas de Comunas 
 
 suma_Primaria = Primaria.loc[0:15 , 'Poblacion'].sum()
 
@@ -83,7 +83,6 @@ Secundaria = Secundaria[1:]
 
 Secundaria = Secundaria.rename(columns = {'C1' : 'Poblacion'})
 
-#Agrego fila de CABA resumiendo la informacion de las filas de Comunas 
 
 suma_Secundaria = Secundaria.loc[0:15 , 'Poblacion'].sum()
 
@@ -107,7 +106,6 @@ Adultos = Adultos[1:]
 
 Adultos = Adultos.rename(columns = {'C1' : 'Poblacion'})
 
-#Agrego fila de CABA resumiendo la informacion de las filas de Comunas 
 
 suma_Adultos = Adultos.loc[0:15 , 'Poblacion'].sum()
 
@@ -119,7 +117,7 @@ Adultos = pd.concat([nueva_fila_Adultos, Adultos], ignore_index = True)
 
 Adultos = Adultos.iloc[:-5,] 
 
-# 1 a 15 index son comunas, quiero ju ntar todas las filas,  
+
 
 
 tabla_pob =  con.execute("""
@@ -130,7 +128,7 @@ tabla_pob =  con.execute("""
                Primaria.Poblacion AS poblacion_Primaria,
                Secundaria.Poblacion AS poblacion_Secundaria,
                Adultos.Poblacion AS poblacion_Adultos
-               FROM Jardin
+               FROM Jardin                                       --juntamos los 4 grupos con un join, dejando el id_departamento como key
                JOIN Primaria ON Jardin.Código = Primaria.Código
                JOIN Secundaria ON Jardin.Código = Secundaria.Código
                JOIN Adultos ON Jardin.Código = Adultos.Código
@@ -139,7 +137,7 @@ tabla_pob =  con.execute("""
                """ ).fetchdf()
                
                
-tabla_pob['poblacion_tot'] = tabla_pob.iloc[:, -4] + tabla_pob.iloc[:, -3] + tabla_pob.iloc[:, -2]  + tabla_pob.iloc[:, -1]
+tabla_pob['poblacion_tot'] = tabla_pob.iloc[:, -4] + tabla_pob.iloc[:, -3] + tabla_pob.iloc[:, -2]  + tabla_pob.iloc[:, -1] #Armo el total de poblacion a partir de los 3 grupos
 
 Poblacion = tabla_pob
 
@@ -154,7 +152,7 @@ tabla_BP = pd.read_csv(carpeta+"tabla_BP.csv")
 
 Bibliotecas  =  con.execute ("""
                   
-                  SELECT nro_conabip, id_departamento, mail, fecha_fundacion
+                  SELECT nro_conabip, id_departamento, mail, fecha_fundacion 
                   FROM tabla_BP
                   ORDER BY nro_conabip
                   
@@ -174,7 +172,7 @@ Establecimientos = con.execute("""
                Cueanexo,
                Nombre,
                CASE 
-               WHEN Departamento ILIKE 'Comuna %' THEN '02000'
+               WHEN Departamento ILIKE 'Comuna %' THEN '02000'    --Juntamos las comunas debido a que la infromacion de BP esta dada en un solo departamento(Ciudad de Buenos Aires)
                ELSE "Código de departamento"
                END AS id_departamento,
                "Nivel inicial - Jardín maternal", "Nivel inicial - Jardín de infantes", Primario, Secundario
@@ -215,15 +213,15 @@ ejercicio1_1 = con.execute("""
         COUNT(CASE 
                 WHEN e."Nivel inicial - Jardín maternal" = 1 
                   OR e."Nivel inicial - Jardín de infantes" = 1 
-                THEN 1 END) AS cantidad_jardines,
-        
+                THEN 1 END) AS cantidad_jardines,                
+                    
         COUNT(CASE WHEN e.Primario = 1 THEN 1 END) AS cantidad_primarias,
         
-        COUNT(CASE WHEN e.Secundario = 1 THEN 1 END) AS cantidad_secundarias
+        COUNT(CASE WHEN e.Secundario = 1 THEN 1 END) AS cantidad_secundarias    --obtenemos la cantidades de EE a partir de Establecimientos.
         
     FROM Establecimientos e
-    JOIN Departamentos d
-      ON e.id_departamento = d.id_departamento
+    JOIN Departamentos d                 --Unimos por Join a partir de la clave id_departamentos en ambas tablas. Esto lo hacemos para conectar las tablas de nuestro esquema.
+      ON e.id_departamento = d.id_departamento            
     GROUP BY d.id_departamento, d.Provincia, d.Departamento
     ORDER BY d.Provincia , cantidad_primarias 
 """).fetchdf()
@@ -241,7 +239,7 @@ ejercicio1_2 =  con.execute("""
                        p.poblacion_Secundaria AS "Poblacion Secundaria"
                        
                        FROM ejercicio1_1 j
-                       LEFT JOIN Poblacion p
+                       LEFT JOIN Poblacion p   
                          ON j.id_departamento = p.id_departamento
                          
                        ORDER BY Provincia ASC , Primarias DESC  
@@ -258,7 +256,7 @@ ejercicio2_1 = con.execute("""
             SELECT 
             id_departamento,
             COUNT(*) as "Cantidad de BP fundadas desde 1950"
-            FROM Bibliotecas
+            FROM Bibliotecas                                 --Seleccionamos las Bibliotecas con fecha de fundacion posterior a 1950
             WHERE SUBSTR(fecha_fundacion, 1, 4) >= '1950'
             GROUP BY id_departamento
             ORDER BY id_departamento
@@ -339,14 +337,14 @@ ejercicio4_1 = con.execute("""
                        FROM (
                        SELECT
                        id_departamento,
-                       SPLIT_PART( SPLIT_PART(mail, '@', 2), '.', 1) AS Dominio,
+                       SPLIT_PART( SPLIT_PART(mail, '@', 2), '.', 1) AS Dominio,   --Encontramos los dominios de mail y los contamos
                        COUNT(*) as cantidad,
-                       ROW_NUMBER() OVER (PARTITION BY id_departamento ORDER BY cantidad DESC) AS ranking
+                       ROW_NUMBER() OVER (PARTITION BY id_departamento ORDER BY cantidad DESC) AS ranking --a partir de la cantidad obtenida hacemos un ranking por departamento
                        FROM Bibliotecas
                        GROUP BY id_departamento, Dominio
                        ORDER BY ranking
                       ) sub
-                       WHERE ranking = 1
+                       WHERE ranking = 1  --elegimos mas valuados por ranking en cada departamento
 """).fetchdf()
 
 
@@ -368,13 +366,13 @@ ejercicio4_2 = con.execute("""
 #1 Cantidad de BP por Provincia
 
 graf1_1 = con.execute("""
-                      SELECT Provincia, COUNT(*) as "Cantidad BP por Provincia"
+                      SELECT Provincia, COUNT(*) as "Cantidad BP por Provincia" --Armamos un COUNT por provincias. De manera que obtenemos la cantidad de filas donde existe esa provincia, es decir, la cantidad de EE por Provincia.
                       FROM
                       (
                        SELECT 
                        d.Provincia
                        FROM Departamentos d
-                       JOIN Establecimientos e
+                       JOIN Establecimientos e                   --hacemos una tabla donde cada fila representa un EE y dice su Provincia
                          ON d.id_departamento = e.id_departamento
                     )
                       GROUP BY Provincia
@@ -399,29 +397,49 @@ plt.grid(axis='y', linestyle='--', alpha=0.7)  # líneas guía horizontales
 
 #3 
 
-
-
-####notas###
-
-#Departamentos sin informacion de poblacion
-
-dep_sin1=  con.execute("""
-                       SELECT id_departamento
-                       FROM Departamentos
-                       EXCEPT ALL  
-                       SELECT id_departamento
-                       FROM Poblacion
-                    
-                      
+graf3_1 =  con.execute("""
+                     SELECT
+                         d.Provincia,
+                         d.Departamento,
+                         e.cant_depto AS "Cantidad EE por Departamento"
+                     FROM (
+                      SELECT 
+                          id_departamento,
+                          COUNT(*) AS cant_depto
+                     FROM Establecimientos
+                     GROUP BY id_departamento
+                     ) e
+                     JOIN Departamentos d
+                       ON d.id_departamento = e.id_departamento
+                     ORDER BY d.Provincia ASC, e.cant_depto DESC
 """).fetchdf()
 
 
-dep_sin2 = con.execute("""
-                       SELECT id_departamento, Departamento
-                       FROM Departamentos
-                       WHERE id_departamento = 94
-                    
-                      
-""").fetchdf() 
+# Agarro todas las provincias salvo Ciudad de Buenos Aires
+provincias = graf3_1['Provincia'].unique()
+provincias_filtradas = [prov for prov in provincias if prov != 'Ciudad de Buenos Aires'] 
 
-    
+# Agrupar datos por provincia filtrada
+data_por_provincia = {
+    prov: graf3_1.loc[graf3_1['Provincia'] == prov, 'Cantidad EE por Departamento'].dropna().values
+    for prov in provincias_filtradas
+}
+
+# Ordenar provincias por mediana
+provincias_ordenadas = sorted(provincias_filtradas, key=lambda p: np.median(data_por_provincia[p]))
+
+# Crear lista con los datos en orden correcto
+data_ordenada = [data_por_provincia[prov] for prov in provincias_ordenadas]
+
+# Graficar boxplot horizontal
+plt.figure(figsize=(14, len(provincias_ordenadas)*0.4))
+plt.boxplot(data_ordenada, labels=provincias_ordenadas, vert=False)
+plt.xlabel("Cantidad EE por Departamento")
+plt.ylabel("Provincias*", fontsize = 14)
+plt.title("Boxplot horizontal de Cantidad EE por Departamento por Provincia", fontsize = 14)
+plt.grid(axis='x', linestyle='--', alpha=1)
+plt.grid(axis='y', linestyle='--', alpha=1)
+plt.figtext(0.05, 0.01, "*Ciudad de Buenos Aires: 2753", ha="left", fontsize=12, style="italic")
+
+plt.tight_layout()
+plt.show()
