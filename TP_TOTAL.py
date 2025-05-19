@@ -14,6 +14,7 @@ Created on Thu May 15 13:40:25 2025
 
 import pandas as pd
 import duckdb
+import matplotlib.pyplot as plt
 
 
 ###POBLACION####
@@ -140,7 +141,7 @@ tabla_pob =  con.execute("""
                
 tabla_pob['poblacion_tot'] = tabla_pob.iloc[:, -4] + tabla_pob.iloc[:, -3] + tabla_pob.iloc[:, -2]  + tabla_pob.iloc[:, -1]
 
-Poblacion = tabla_pob 
+Poblacion = tabla_pob
 
 con.register("Poblacion", Poblacion)
 
@@ -205,7 +206,7 @@ Departamentos = con.execute("""
 con.register("Departamentos", Departamentos)
 ###EJERCICIO 1#####
 
-join1_1 = con.execute("""
+ejercicio1_1 = con.execute("""
         SELECT 
         d.id_departamento,
         d.Provincia,
@@ -228,7 +229,7 @@ join1_1 = con.execute("""
 """).fetchdf()
 
 
-join1_2 =  con.execute("""
+ejercicio1_2 =  con.execute("""
                        SELECT 
                        j.Provincia,
                        j.Departamento,
@@ -239,13 +240,165 @@ join1_2 =  con.execute("""
                        j.cantidad_secundarias AS Secundarias,
                        p.poblacion_Secundaria AS "Poblacion Secundaria"
                        
-                       FROM join1_1 j
+                       FROM ejercicio1_1 j
                        LEFT JOIN Poblacion p
                          ON j.id_departamento = p.id_departamento
                          
                        ORDER BY Provincia ASC , Primarias DESC  
                       
 """).fetchdf()
+
+
+##EJERCICIO 2
+
+
+
+#Selcciono la suma cantidad de BPs por id_departamento
+ejercicio2_1 = con.execute("""
+            SELECT 
+            id_departamento,
+            COUNT(*) as "Cantidad de BP fundadas desde 1950"
+            FROM Bibliotecas
+            WHERE SUBSTR(fecha_fundacion, 1, 4) >= '1950'
+            GROUP BY id_departamento
+            ORDER BY id_departamento
+            """).fetchdf()
+
+
+
+#Desde Departamentos selecciono a partir del id_departamento los nombres de la Provincia y el Departamento
+ejercicio2_2 = con.execute("""
+           SELECT 
+               d.Provincia,
+               d.Departamento,
+               j."Cantidad de BP fundadas desde 1950",
+               FROM ejercicio2_1 j
+               JOIN Departamentos d
+                 ON j.id_departamento = d.id_departamento
+               ORDER BY d.Provincia ASC, j."Cantidad de BP fundadas desde 1950" DESC
+           
+           """).fetchdf()
+
+##EJERCICIO 3
+
+
+ejercicio3_1 = con.execute("""
+                             
+                SELECT
+                D.id_departamento,
+                D.Provincia,
+                D.Departamento,
+                (EE.cantidad_jardines + EE.cantidad_primarias + EE.cantidad_secundarias) AS Cant_EE, 
+                -- del ejercicio 1 sumo cada columna de cantidad y consigo la cantidad total de EE en cada departamento
+                COUNT(BP.nro_conabip) AS Cant_BP 
+            FROM ejercicio1_1 AS EE
+            JOIN Departamentos AS D
+                ON LOWER(TRIM(EE.Provincia)) = LOWER(TRIM(D.Provincia)) --por las dudas paso todo a minusculas y elimino los espacios para que el join sea mas preciso
+                AND LOWER(TRIM(EE.Departamento)) = LOWER(TRIM(D.Departamento)) --lo mismo para departamento
+            LEFT JOIN Bibliotecas AS BP
+                ON D.id_departamento = BP.id_departamento --hago un left join para que si hay un Departamento que tiene EE pero no tiene EE o viceversa, aparezca igual
+            GROUP BY
+                D.id_departamento,
+                D.Provincia,
+                D.Departamento,
+                EE.cantidad_jardines,
+                EE.cantidad_primarias,
+                EE.cantidad_secundarias
+            ORDER BY
+                Cant_EE DESC, 
+                Cant_BP DESC,
+                D.Provincia ASC,
+                D.Departamento ASC;
+
+    """).fetchdf()
+    
+    
+ejercicio3_2 =  con.execute("""
+                       SELECT 
+                       j.Provincia,
+                       j.Departamento,
+                       j.Cant_EE,
+                       j.Cant_BP,
+                       p.poblacion_tot AS Poblacion,
+                       
+                       FROM ejercicio3_1 j
+                       LEFT JOIN Poblacion p
+                         ON j.id_departamento = p.id_departamento
+                         
+                       ORDER BY j.Cant_EE DESC, 
+                       j.Cant_BP DESC,
+                       j.Provincia ASC,
+                       j.Departamento ASC;
+                      
+""").fetchdf()
+
+##EJERCICIO 4
+
+ejercicio4_1 = con.execute("""
+                       SELECT *
+                       FROM (
+                       SELECT
+                       id_departamento,
+                       SPLIT_PART( SPLIT_PART(mail, '@', 2), '.', 1) AS Dominio,
+                       COUNT(*) as cantidad,
+                       ROW_NUMBER() OVER (PARTITION BY id_departamento ORDER BY cantidad DESC) AS ranking
+                       FROM Bibliotecas
+                       GROUP BY id_departamento, Dominio
+                       ORDER BY ranking
+                      ) sub
+                       WHERE ranking = 1
+""").fetchdf()
+
+
+ejercicio4_2 = con.execute("""
+                       SELECT 
+                       d.Provincia,
+                       d.Departamento,
+                       j.Dominio AS "Dominio más Frecuente en BP",
+                       FROM ejercicio4_1 j
+                       JOIN Departamentos d
+                         ON d.id_departamento = j.id_departamento
+                       GROUP BY d.Provincia , d.Departamento, j.Dominio  
+                       ORDER BY d.Provincia ASC
+""").fetchdf()
+
+
+###GRAFICOS
+
+#1 Cantidad de BP por Provincia
+
+graf1_1 = con.execute("""
+                      SELECT Provincia, COUNT(*) as "Cantidad BP por Provincia"
+                      FROM
+                      (
+                       SELECT 
+                       d.Provincia
+                       FROM Departamentos d
+                       JOIN Establecimientos e
+                         ON d.id_departamento = e.id_departamento
+                    )
+                      GROUP BY Provincia
+                      ORDER BY  "Cantidad BP por Provincia" DESC 
+""").fetchdf()
+
+
+plt.figure(figsize=(12,6))  # tamaño ancho x alto
+
+plt.bar(graf1_1['Provincia'], graf1_1['Cantidad BP por Provincia'])
+
+plt.title('Cantidad BP por Provincia', fontsize=16)
+plt.xlabel('Provincia', fontsize=14)
+plt.ylabel('Cantidad BP', fontsize=14)
+
+plt.xticks(rotation=45, ha='right', fontsize=12)  # rotar etiquetas 45° y alinearlas a la derecha
+
+plt.yticks(fontsize=12)
+
+plt.grid(axis='y', linestyle='--', alpha=0.7)  # líneas guía horizontales
+
+
+#3 
+
 
 
 ####notas###
@@ -269,6 +422,6 @@ dep_sin2 = con.execute("""
                        WHERE id_departamento = 94
                     
                       
-""").fetchdf()
+""").fetchdf() 
 
     
