@@ -481,6 +481,9 @@ plt.grid(True)
 plt.tight_layout()
 plt.show()
 
+#IMPORTANTE para resolver este ejercicio cambie el nombre de un par de columnas de "ejercicio1_2", 
+# Poblacion Primaria lo cambie por "Poblacion Primarias" y Poblacion Secundaria por "Poblacion Secundarias" 
+
     
     
 
