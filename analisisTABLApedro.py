@@ -427,9 +427,9 @@ ejercicio1_2 =  con.execute("""
                        j.cantidad_jardines AS Jardines,
                        p.poblacion_Jardin AS "Poblacion Jardines",
                        j.cantidad_primarias AS Primarias,
-                       p.poblacion_Primaria AS "Poblacion Primaria",
+                       p.poblacion_Primaria AS "Poblacion Primarias",
                        j.cantidad_secundarias AS Secundarias,
-                       p.poblacion_Secundaria AS "Poblacion Secundaria"
+                       p.poblacion_Secundaria AS "Poblacion Secundarias"
                        
                        FROM ejercicio1_1 j
                        LEFT JOIN Poblacion p
@@ -441,23 +441,30 @@ ejercicio1_2 =  con.execute("""
 
 
 
+con.register("ejercicio1_2" , ejercicio1_2)
 
 
-# Paso 1: Transformar a formato "largo" (long format)
-df_long = pd.ejercicio1_2()
 
-niveles = ['Jardín', 'Primaria', 'Secundaria']
+
+# Asumimos que ya tenés el DataFrame cargado como ejercicio1_2
+df = ejercicio1_2  # renombramos para mayor comodidad
+
+# Convertimos a formato largo
+df_long = pd.DataFrame()
+
+niveles = ['Jardín', 'Primarias', 'Secundarias']
 for nivel in niveles:
-    df_nivel = pd.ejercicio1_2({
-        'Provincia': ejercicio1_2['Provincia'],
-        'Departamento': ejercicio1_2['Departamento'],
+    df_nivel = pd.DataFrame({
+        'Provincia': df['Provincia'],
+        'Departamento': df['Departamento'],
         'Nivel': nivel,
-        'Cantidad_EE': ejercicio1_2[f'{nivel}es'] if nivel != 'Jardín' else ejercicio1_2['Jardines'],
-        'Población': ejercicio1_2[f'Población {nivel}']
+        'Cantidad_EE': df[f'{nivel}'] if nivel != 'Jardín' else df['Jardines'],
+        'Población': df["Poblacion Jardines"] if nivel == 'Jardín' else df[f"Poblacion {nivel}"]
+
     })
     df_long = pd.concat([df_long, df_nivel], ignore_index=True)
 
-# Paso 2: Gráfico
+# Gráfico
 plt.figure(figsize=(10, 6))
 sns.scatterplot(
     data=df_long,
