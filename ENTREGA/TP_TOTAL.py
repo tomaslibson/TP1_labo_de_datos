@@ -12,18 +12,34 @@ Created on Thu May 15 13:40:25 2025
 @author: libso
 """
 
-import pandas as pd
+# %%
+
+# Materia: Laboratorio de Datos
+# Fecha: 21/05/2025
+# Nombre del Grupo: Andate Riquelme
+# Integrantes: Pedro Raffo, Felipe Comas y Tomás Libson
+
+# En el Codigo partimos desde 6 tablas: 4 de poblacion (distinguidas por grupo etario), Establecimientos Educativos (EE) y Bibliotecas Publicas (BP).
+# En el apartado Tablas de Poblacion por Grupo Etario manipulamos la informacion de las 4 tablas de poblacion para obtener nuestra tabla Poblacion descripta en el Modelo.
+# Las tablas Establecimientos y Bibliotecas surgen a partir de la "limpieza" de las tablas EE y BP respectivamente. Proceso llevado a cabo segun los criterios ya mencionados en el infrome.
+# Los apartados Ejercicios y Graficos estan destinados a la resolucion de los ejercios planteados en el enunciado.
+
+#%%
+
+
 import duckdb
+import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 
-###POBLACION####
-
-carpeta = "C:\\Users\\libso\\OneDrive\\Escritorio\\ubaTarea\\Labo_de_datos\\TP1_labo_de_datos\\Tablas\\"
+carpeta = os.path.join(os.path.dirname(__file__), "TablasOriginales") + os.sep 
 
 con = duckdb.connect()
 
-#JARDIN
+###Tablas Poblacion por Grupo Etario
+
+#GE_JARDIN
 Jardin = pd.read_excel(carpeta+ "GE_Jardin.xlsX", header = 10)  #le saco el titulo de la tabla y demas informacion inutil
 
 
@@ -51,7 +67,7 @@ Jardin = Jardin.iloc[:-5,] #Le saco las ultimas filas, TOTAL y vacias.
 
 #Repetimos lo mismo para las otras 3 tablas
 
-#PRIMARIA
+#GE_PRIMARIA
 Primaria = pd.read_excel(carpeta+ "GE_Primaria.xlsX", header = 10)
 
 Primaria = Primaria.drop(Primaria.columns[0], axis =1)
@@ -72,7 +88,7 @@ Primaria = pd.concat([nueva_fila_Primaria, Primaria], ignore_index = True)
 
 Primaria = Primaria.iloc[:-5,] 
 
-#SECUNDARIA
+#GE_SECUNDARIA
 Secundaria = pd.read_excel(carpeta+ "GE_Secundaria.xlsX", header = 10)
 
 Secundaria = Secundaria.drop(Secundaria.columns[0], axis =1)
@@ -94,7 +110,7 @@ Secundaria = pd.concat([nueva_fila_Secundaria, Secundaria], ignore_index = True)
 
 Secundaria = Secundaria.iloc[:-5,] 
 
-#ADULTOS
+#GE_ADULTOS
 
 Adultos = pd.read_excel(carpeta+ "GE_Adultos.xlsX", header = 10)
 
@@ -118,7 +134,7 @@ Adultos = pd.concat([nueva_fila_Adultos, Adultos], ignore_index = True)
 Adultos = Adultos.iloc[:-5,] 
 
 
-
+#Junto los Grupos Etarios
 
 tabla_pob =  con.execute("""
                SELECT 
@@ -181,8 +197,9 @@ Establecimientos = con.execute("""
 
 
 con.register("Establecimientos", Establecimientos)
-###Tabla departamentos###
 
+
+###Tabla departamentos###
        
 Departamentos = con.execute("""
                SELECT DISTINCT 
@@ -202,7 +219,11 @@ Departamentos = con.execute("""
                """ ).fetchdf()
 
 con.register("Departamentos", Departamentos)
-###EJERCICIO 1#####
+
+
+#CONSULTAS SQL#
+
+#EJERCICIO 1
 
 ejercicio1_1 = con.execute("""
         SELECT 
@@ -361,7 +382,7 @@ ejercicio4_2 = con.execute("""
 """).fetchdf()
 
 
-###GRAFICOS
+###GRAFICOS###
 
 #1 Cantidad de BP por Provincia
 
@@ -436,7 +457,7 @@ plt.figure(figsize=(14, len(provincias_ordenadas)*0.4))
 plt.boxplot(data_ordenada, labels=provincias_ordenadas, vert=False)
 plt.xlabel("Cantidad EE por Departamento")
 plt.ylabel("Provincias*", fontsize = 14)
-plt.title("Boxplot horizontal de Cantidad EE por Departamento por Provincia", fontsize = 14)
+plt.title("Cantidad EE por Departamento por Provincia", fontsize = 14)
 plt.grid(axis='x', linestyle='--', alpha=1)
 plt.grid(axis='y', linestyle='--', alpha=1)
 plt.figtext(0.05, 0.01, "*Ciudad de Buenos Aires: 2753", ha="left", fontsize=12, style="italic")
