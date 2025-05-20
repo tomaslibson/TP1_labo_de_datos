@@ -446,40 +446,43 @@ con.register("ejercicio1_2" , ejercicio1_2)
 
 
 
-# Asumimos que ya tenés el DataFrame cargado como ejercicio1_2
-df = ejercicio1_2  # renombramos para mayor comodidad
+# Usamos la tabla del ejercicio 1 de SQL:
+df = ejercicio1_2  
 
-# Convertimos a formato largo
+# Hacemos un DataFrame vacío para ir acumulando nuestros datos para el gráfico
 df_long = pd.DataFrame()
-
-niveles = ['Jardín', 'Primarias', 'Secundarias']
+# Defino cuales son los niveles educativos para guardar su respectiva información.
+niveles = ['Jardines', 'Primarias', 'Secundarias']
+# ahora buscamos la data para cada nivel en la tabla del ejercicio 1
 for nivel in niveles:
     df_nivel = pd.DataFrame({
         'Provincia': df['Provincia'],
         'Departamento': df['Departamento'],
         'Nivel': nivel,
-        'Cantidad_EE': df[f'{nivel}'] if nivel != 'Jardín' else df['Jardines'],
-        'Población': df["Poblacion Jardines"] if nivel == 'Jardín' else df[f"Poblacion {nivel}"]
+        'Cantidad_EE': df[f'{nivel}'] , # Cantidad de EE del nivel educativo
+        'Población': df[f"Poblacion {nivel}"] # Población correspondiente a ese nivel
 
     })
     df_long = pd.concat([df_long, df_nivel], ignore_index=True)
 
 # Gráfico
+
 plt.figure(figsize=(10, 6))
+# Vamos a usar un gráfico de dispersión, ya que es el que mejor se amolda para representar las variables que nos piden:
 sns.scatterplot(
     data=df_long,
-    x='Población',
-    y='Cantidad_EE',
-    hue='Nivel',
-    palette='Set1',
-    s=100
+    x='Población', # Notemos que en el gráfico para que sea legible la poblacion se toma en millones 
+    y='Cantidad_EE', 
+    hue='Nivel', # Cada nivel educativo tiene su respectivo color
+    palette='Set1', # color de los puntos 
+    s=100 # tamaño de los puntos
 )
-plt.title('Cantidad de EE vs Población por Nivel Educativo')
-plt.xlabel('Población')
-plt.ylabel('Cantidad de EE')
+plt.title('Cantidad de EE en función de la Población') # Título del gráfico
+plt.xlabel('Población (millones)') # Nombre eje x
+plt.ylabel('Cantidad de EE') # Nombre eje y 
 plt.grid(True)
 plt.tight_layout()
-plt.show()
+plt.show() 
 
 #IMPORTANTE para resolver este ejercicio cambie el nombre de un par de columnas de "ejercicio1_2", 
 # Poblacion Primaria lo cambie por "Poblacion Primarias" y Poblacion Secundaria por "Poblacion Secundarias" 
