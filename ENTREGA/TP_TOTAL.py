@@ -455,7 +455,7 @@ plt.xlabel('Población (millones)') # Nombre eje x
 plt.ylabel('Cantidad de EE') # Nombre eje y 
 plt.grid(True)
 plt.tight_layout()
-plt.show()
+
 
 
 
@@ -508,7 +508,7 @@ plt.grid(axis='x', linestyle='--', alpha=1)
 plt.grid(axis='y', linestyle='--', alpha=1)
 plt.figtext(0.05, 0.01, "*Ciudad de Buenos Aires: 2753", ha="left", fontsize=12, style="italic") # Aca el agregado del valor atipico de Ciudad de Buenos Aires
 plt.tight_layout()
-plt.show()
+
 
 
 #4
