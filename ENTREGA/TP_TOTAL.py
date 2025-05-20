@@ -19,7 +19,7 @@ Created on Thu May 15 13:40:25 2025
 # Nombre del Grupo: Andate Riquelme
 # Integrantes: Pedro Raffo, Felipe Comas y Tomás Libson
 
-# En el Codigo partimos desde 6 tablas: 4 de poblacion (distinguidas por grupo etario), Establecimientos Educativos (EE) y Bibliotecas Publicas (BP).
+# En el Codigo partimos desde 6 tablas: 4 de poblacion (distinguidas por grupo etario), Establecimientos Educativos (EE) y Bibliotecas Populares (BP).
 # En el apartado Tablas de Poblacion por Grupo Etario manipulamos la informacion de las 4 tablas de poblacion para obtener nuestra tabla Poblacion descripta en el Modelo.
 # Las tablas Establecimientos y Bibliotecas surgen a partir de la "limpieza" de las tablas EE y BP respectivamente. Proceso llevado a cabo segun los criterios ya mencionados en el infrome.
 # Los apartados Ejercicios y Graficos estan destinados a la resolucion de los ejercios planteados en el enunciado.
@@ -226,7 +226,7 @@ con.register("Departamentos", Departamentos)
 
 #EJERCICIO 1
 
-ejercicio1_1 = con.execute("""
+consulta1_aux = con.execute("""
         SELECT 
         d.id_departamento,
         d.Provincia,
@@ -249,7 +249,7 @@ ejercicio1_1 = con.execute("""
 """).fetchdf()
 
 
-ejercicio1_2 =  con.execute("""
+consulta1 =  con.execute("""
                        SELECT 
                        j.Provincia,
                        j.Departamento,
@@ -260,7 +260,7 @@ ejercicio1_2 =  con.execute("""
                        j.cantidad_secundarias AS Secundarias,
                        p.poblacion_Secundaria AS "Poblacion Secundarias"
                        
-                       FROM ejercicio1_1 j
+                       FROM consulta1_aux j
                        LEFT JOIN Poblacion p   
                          ON j.id_departamento = p.id_departamento
                          
@@ -274,7 +274,7 @@ ejercicio1_2 =  con.execute("""
 
 
 #Selcciono la suma cantidad de BPs por id_departamento
-ejercicio2_1 = con.execute("""
+consulta2_aux = con.execute("""
             SELECT 
             id_departamento,
             COUNT(*) as "Cantidad de BP fundadas desde 1950"
@@ -287,12 +287,12 @@ ejercicio2_1 = con.execute("""
 
 
 #Desde Departamentos selecciono a partir del id_departamento los nombres de la Provincia y el Departamento
-ejercicio2_2 = con.execute("""
+consulta2 = con.execute("""
            SELECT 
                d.Provincia,
                d.Departamento,
                j."Cantidad de BP fundadas desde 1950",
-               FROM ejercicio2_1 j
+               FROM consulta2_aux j
                JOIN Departamentos d
                  ON j.id_departamento = d.id_departamento
                ORDER BY d.Provincia ASC, j."Cantidad de BP fundadas desde 1950" DESC
@@ -302,7 +302,7 @@ ejercicio2_2 = con.execute("""
 ##EJERCICIO 3
 
 
-ejercicio3_1 = con.execute("""
+consulta3_aux = con.execute("""
                              
                 SELECT
                 D.id_departamento,
@@ -311,7 +311,7 @@ ejercicio3_1 = con.execute("""
                 (EE.cantidad_jardines + EE.cantidad_primarias + EE.cantidad_secundarias) AS Cant_EE, 
                 -- del ejercicio 1 sumo cada columna de cantidad y consigo la cantidad total de EE en cada departamento
                 COUNT(BP.nro_conabip) AS Cant_BP 
-            FROM ejercicio1_1 AS EE
+            FROM consulta1_aux AS EE
             JOIN Departamentos AS D
                 ON LOWER(TRIM(EE.Provincia)) = LOWER(TRIM(D.Provincia)) --por las dudas paso todo a minusculas y elimino los espacios para que el join sea mas preciso
                 AND LOWER(TRIM(EE.Departamento)) = LOWER(TRIM(D.Departamento)) --lo mismo para departamento
@@ -333,7 +333,7 @@ ejercicio3_1 = con.execute("""
     """).fetchdf()
     
     
-ejercicio3_2 =  con.execute("""
+consulta3 =  con.execute("""
                        SELECT 
                        j.Provincia,
                        j.Departamento,
@@ -341,7 +341,7 @@ ejercicio3_2 =  con.execute("""
                        j.Cant_BP,
                        p.poblacion_tot AS Poblacion,
                        
-                       FROM ejercicio3_1 j
+                       FROM consulta3_aux j
                        LEFT JOIN Poblacion p
                          ON j.id_departamento = p.id_departamento
                          
@@ -354,7 +354,7 @@ ejercicio3_2 =  con.execute("""
 
 ##EJERCICIO 4
 
-ejercicio4_1 = con.execute("""
+consulta4_aux = con.execute("""
                        SELECT *
                        FROM (
                        SELECT
@@ -370,12 +370,12 @@ ejercicio4_1 = con.execute("""
 """).fetchdf()
 
 
-ejercicio4_2 = con.execute("""
+consulta4 = con.execute("""
                        SELECT 
                        d.Provincia,
                        d.Departamento,
                        j.Dominio AS "Dominio más Frecuente en BP",
-                       FROM ejercicio4_1 j
+                       FROM consulta4_aux j
                        JOIN Departamentos d
                          ON d.id_departamento = j.id_departamento
                        GROUP BY d.Provincia , d.Departamento, j.Dominio  
@@ -389,7 +389,7 @@ ruta_graficos = "C://Users//libso//OneDrive//Escritorio//ubaTarea//Labo_de_datos
 
 #1 Cantidad de BP por Provincia
 
-graf1_1 = con.execute("""
+graf1 = con.execute("""
                       SELECT Provincia, COUNT(*) as "Cantidad BP por Provincia" --Armamos un COUNT por provincias. De manera que obtenemos la cantidad de filas donde existe esa provincia, es decir, la cantidad de EE por Provincia.
                       FROM
                       (
@@ -407,7 +407,7 @@ graf1_1 = con.execute("""
 # Armamamos un grafico de barras relacionando las Provincias con la cantidad de BP en cada una
 
 plt.figure(figsize=(12,6))  
-plt.bar(graf1_1['Provincia'], graf1_1['Cantidad BP por Provincia'])
+plt.bar(graf1['Provincia'], graf1['Cantidad BP por Provincia'])
 plt.title('Cantidad BP por Provincia', fontsize=16)
 plt.xlabel('Provincia', fontsize=14)
 plt.ylabel('Cantidad BP', fontsize=14)
@@ -420,19 +420,19 @@ plt.grid(axis='y', linestyle='--', alpha=0.7)  #Grilla horizontal
 
 #Hcemos tabla que me devuelva la provincia, el departamento y la cantidad de BP y EE cada mil habitantes usando la tabla del ejercicio 3.2
 
-ej2_4 = con.execute("""
+graf2 = con.execute("""
         SELECT Provincia, 
         Departamento, 
         ROUND((Cant_BP / Poblacion) * 1000.0, 2) AS bp_cada_mil, 
         ROUND((Cant_EE / Poblacion) * 1000.0, 2) AS ee_cada_mil
-        FROM ejercicio3_2
+        FROM consulta3
         ORDER BY Provincia ASC, Departamento ASC;
         """).fetchdf()
 
 
 #Hacemos un gráfico de disperción donde cada punto es un departamento representado con el color de su provincia. En el eje X figura la proporción de BP cada mil habitantes, y en el eje Y la proporción de EE cada mil habitantes.
 plt.figure(figsize=(10, 6))
-sns.scatterplot(data=ej2_4,
+sns.scatterplot(data=graf2,
                 x="bp_cada_mil",
                 y="ee_cada_mil",
                 hue="Provincia",
@@ -500,29 +500,29 @@ plt.show()
 
 
 #Usamos la tabla del ejercicio 1 de SQL:,
-df = ejercicio1_2
+graf4 = consulta1
 
 #Hacemos un DataFrame vacío para ir acumulando nuestros datos para el gráfico,
-df_long = pd.DataFrame()
+graf4_long = pd.DataFrame()
 #Defino cuales son los niveles educativos para guardar su respectiva información.,
 niveles = ['Jardines', 'Primarias', 'Secundarias']
 #ahora buscamos la data para cada nivel en la tabla del ejercicio 1,
 for nivel in niveles:
-    df_nivel = pd.DataFrame({
-        'Provincia': df['Provincia'],
-        'Departamento': df['Departamento'],
+    graf4_nivel = pd.DataFrame({
+        'Provincia': graf4['Provincia'],
+        'Departamento': graf4['Departamento'],
         'Nivel': nivel,
-        'Cantidad_EE': df[f'{nivel}'] , # Cantidad de EE del nivel educativo
-        'Población': df[f"Poblacion {nivel}"] # Población correspondiente a ese nivel
+        'Cantidad_EE': graf4[f'{nivel}'] , # Cantidad de EE del nivel educativo
+        'Población': graf4[f"Poblacion {nivel}"] # Población correspondiente a ese nivel
 
     })
-    df_long = pd.concat([df_long, df_nivel], ignore_index=True)
+    graf4_long = pd.concat([graf4_long, graf4_nivel], ignore_index=True)
 
 #Gráficamo,
 plt.figure(figsize=(10, 6))
 #Vamos a usar un gráfico de dispersión, ya que es el que mejor se amolda para representar las variables que nos piden:,
 sns.scatterplot(
-    data=df_long,
+    data=graf4_long,
     x='Población', # Notemos que en el gráfico para que sea legible la poblacion se toma en millones 
     y='Cantidad_EE', 
     hue='Nivel', # Cada nivel educativo tiene su respectivo color
