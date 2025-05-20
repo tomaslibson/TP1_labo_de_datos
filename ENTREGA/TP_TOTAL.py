@@ -260,8 +260,8 @@ consulta1 =  con.execute("""
                        j.cantidad_secundarias AS Secundarias,
                        p.poblacion_Secundaria AS "Poblacion Secundarias"
                        
-                       FROM consulta1_aux j
-                       LEFT JOIN Poblacion p   
+                       FROM consulta1_aux j                                    
+                       LEFT JOIN Poblacion p                            --intercalamos con un join la infromacion de la poblacion por cada grupo etario destinado a cada etapa educativa
                          ON j.id_departamento = p.id_departamento
                          
                        ORDER BY Provincia ASC , Primarias DESC  
@@ -308,15 +308,14 @@ consulta3_aux = con.execute("""
                 D.id_departamento,
                 D.Provincia,
                 D.Departamento,
-                (EE.cantidad_jardines + EE.cantidad_primarias + EE.cantidad_secundarias) AS Cant_EE, 
-                -- del ejercicio 1 sumo cada columna de cantidad y consigo la cantidad total de EE en cada departamento
+                (EE.cantidad_jardines + EE.cantidad_primarias + EE.cantidad_secundarias) AS Cant_EE,   -- del ejercicio 1 sumo cada columna de cantidad y consigo la cantidad total de EE en cada departamento
                 COUNT(BP.nro_conabip) AS Cant_BP 
             FROM consulta1_aux AS EE
             JOIN Departamentos AS D
-                ON LOWER(TRIM(EE.Provincia)) = LOWER(TRIM(D.Provincia)) --por las dudas paso todo a minusculas y elimino los espacios para que el join sea mas preciso
-                AND LOWER(TRIM(EE.Departamento)) = LOWER(TRIM(D.Departamento)) --lo mismo para departamento
+                ON LOWER(TRIM(EE.Provincia)) = LOWER(TRIM(D.Provincia))             --por las dudas paso todo a minusculas y elimino los espacios para que el join sea mas preciso
+                AND LOWER(TRIM(EE.Departamento)) = LOWER(TRIM(D.Departamento))      --lo mismo para departamento
             LEFT JOIN Bibliotecas AS BP
-                ON D.id_departamento = BP.id_departamento --hago un left join para que si hay un Departamento que tiene EE pero no tiene EE o viceversa, aparezca igual
+                ON D.id_departamento = BP.id_departamento                           --hago un left join para que si hay un Departamento que tiene EE pero no tiene EE o viceversa, aparezca igual
             GROUP BY
                 D.id_departamento,
                 D.Provincia,
@@ -333,6 +332,7 @@ consulta3_aux = con.execute("""
     """).fetchdf()
     
     
+# le agregamos la poblacion total a cada departamento     
 consulta3 =  con.execute("""
                        SELECT 
                        j.Provincia,
@@ -369,7 +369,7 @@ consulta4_aux = con.execute("""
                        WHERE ranking = 1  --elegimos mas valuados por ranking en cada departamento
 """).fetchdf()
 
-
+# agregamos Provincia y Departamento por join en id_depatamento
 consulta4 = con.execute("""
                        SELECT 
                        d.Provincia,
@@ -416,34 +416,48 @@ plt.yticks(fontsize=12)
 
 plt.grid(axis='y', linestyle='--', alpha=0.7)  #Grilla horizontal
 
+
 #2
 
-#Hcemos tabla que me devuelva la provincia, el departamento y la cantidad de BP y EE cada mil habitantes usando la tabla del ejercicio 3.2
 
-graf2 = con.execute("""
-        SELECT Provincia, 
-        Departamento, 
-        ROUND((Cant_BP / Poblacion) * 1000.0, 2) AS bp_cada_mil, 
-        ROUND((Cant_EE / Poblacion) * 1000.0, 2) AS ee_cada_mil
-        FROM consulta3
-        ORDER BY Provincia ASC, Departamento ASC;
-        """).fetchdf()
+#Usamos la tabla del ejercicio 1 de SQL:,
+graf2 = consulta1
 
+#Hacemos un DataFrame vacío para ir acumulando nuestros datos para el gráfico,
+graf2_long = pd.DataFrame()
+#Defino cuales son los niveles educativos para guardar su respectiva información.,
+niveles = ['Jardines', 'Primarias', 'Secundarias']
+#ahora buscamos la data para cada nivel en la tabla del ejercicio 1,
+for nivel in niveles:
+    graf2_nivel = pd.DataFrame({
+        'Provincia': graf2['Provincia'],
+        'Departamento': graf2['Departamento'],
+        'Nivel': nivel,
+        'Cantidad_EE': graf2[f'{nivel}'] , # Cantidad de EE del nivel educativo
+        'Población': graf2[f"Poblacion {nivel}"] # Población correspondiente a ese nivel
 
-#Hacemos un gráfico de disperción donde cada punto es un departamento representado con el color de su provincia. En el eje X figura la proporción de BP cada mil habitantes, y en el eje Y la proporción de EE cada mil habitantes.
+    })
+    graf2_long = pd.concat([graf2_long, graf2_nivel], ignore_index=True)
+
+#Gráficamo,
 plt.figure(figsize=(10, 6))
-sns.scatterplot(data=graf2,
-                x="bp_cada_mil",
-                y="ee_cada_mil",
-                hue="Provincia",
-                s=25)
-
-plt.title("Relación entre BP y EE cada mil habitantes")
-plt.xlabel("BP cada mil habitantes")
-plt.ylabel("EE cada mil habitantes")
+#Vamos a usar un gráfico de dispersión, ya que es el que mejor se amolda para representar las variables que nos piden:,
+sns.scatterplot(
+    data=graf2_long,
+    x='Población', # Notemos que en el gráfico para que sea legible la poblacion se toma en millones 
+    y='Cantidad_EE', 
+    hue='Nivel', # Cada nivel educativo tiene su respectivo color
+    palette='Set1', # color de los puntos 
+    s=100 # tamaño de los puntos
+)
+plt.title('Cantidad de EE en función de la Población') # Título del gráfico
+plt.xlabel('Población (millones)') # Nombre eje x
+plt.ylabel('Cantidad de EE') # Nombre eje y 
 plt.grid(True)
 plt.tight_layout()
-plt.legend(title="Provincia", bbox_to_anchor=(1.05, 1), loc='upper left')
+plt.show()
+
+
 
 #3 
 
@@ -496,46 +510,35 @@ plt.figtext(0.05, 0.01, "*Ciudad de Buenos Aires: 2753", ha="left", fontsize=12,
 plt.tight_layout()
 plt.show()
 
+
 #4
 
+#Hcemos tabla que me devuelva la provincia, el departamento y la cantidad de BP y EE cada mil habitantes usando la tabla del ejercicio 3.2
 
-#Usamos la tabla del ejercicio 1 de SQL:,
-graf4 = consulta1
+graf4 = con.execute("""
+        SELECT Provincia, 
+        Departamento, 
+        ROUND((Cant_BP / Poblacion) * 1000.0, 2) AS bp_cada_mil, 
+        ROUND((Cant_EE / Poblacion) * 1000.0, 2) AS ee_cada_mil
+        FROM consulta3
+        ORDER BY Provincia ASC, Departamento ASC;
+        """).fetchdf()
 
-#Hacemos un DataFrame vacío para ir acumulando nuestros datos para el gráfico,
-graf4_long = pd.DataFrame()
-#Defino cuales son los niveles educativos para guardar su respectiva información.,
-niveles = ['Jardines', 'Primarias', 'Secundarias']
-#ahora buscamos la data para cada nivel en la tabla del ejercicio 1,
-for nivel in niveles:
-    graf4_nivel = pd.DataFrame({
-        'Provincia': graf4['Provincia'],
-        'Departamento': graf4['Departamento'],
-        'Nivel': nivel,
-        'Cantidad_EE': graf4[f'{nivel}'] , # Cantidad de EE del nivel educativo
-        'Población': graf4[f"Poblacion {nivel}"] # Población correspondiente a ese nivel
 
-    })
-    graf4_long = pd.concat([graf4_long, graf4_nivel], ignore_index=True)
-
-#Gráficamo,
+#Hacemos un gráfico de disperción donde cada punto es un departamento representado con el color de su provincia. En el eje X figura la proporción de BP cada mil habitantes, y en el eje Y la proporción de EE cada mil habitantes.
 plt.figure(figsize=(10, 6))
-#Vamos a usar un gráfico de dispersión, ya que es el que mejor se amolda para representar las variables que nos piden:,
-sns.scatterplot(
-    data=graf4_long,
-    x='Población', # Notemos que en el gráfico para que sea legible la poblacion se toma en millones 
-    y='Cantidad_EE', 
-    hue='Nivel', # Cada nivel educativo tiene su respectivo color
-    palette='Set1', # color de los puntos 
-    s=100 # tamaño de los puntos
-)
-plt.title('Cantidad de EE en función de la Población') # Título del gráfico
-plt.xlabel('Población (millones)') # Nombre eje x
-plt.ylabel('Cantidad de EE') # Nombre eje y 
+sns.scatterplot(data=graf4,
+                x="bp_cada_mil",
+                y="ee_cada_mil",
+                hue="Provincia",
+                s=25)
+
+plt.title("Relación entre BP y EE cada mil habitantes")
+plt.xlabel("BP cada mil habitantes")
+plt.ylabel("EE cada mil habitantes")
 plt.grid(True)
 plt.tight_layout()
-plt.show()
-
+plt.legend(title="Provincia", bbox_to_anchor=(1.05, 1), loc='upper left')
 
 
 
