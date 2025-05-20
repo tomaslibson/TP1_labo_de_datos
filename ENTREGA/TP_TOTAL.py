@@ -31,6 +31,7 @@ import duckdb
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import seaborn as sns
 import os
 
 carpeta = os.path.join(os.path.dirname(__file__), "TablasOriginales") + os.sep 
@@ -255,9 +256,9 @@ ejercicio1_2 =  con.execute("""
                        j.cantidad_jardines AS Jardines,
                        p.poblacion_Jardin AS "Poblacion Jardines",
                        j.cantidad_primarias AS Primarias,
-                       p.poblacion_Primaria AS "Poblacion Primaria",
+                       p.poblacion_Primaria AS "Poblacion Primarias",
                        j.cantidad_secundarias AS Secundarias,
-                       p.poblacion_Secundaria AS "Poblacion Secundaria"
+                       p.poblacion_Secundaria AS "Poblacion Secundarias"
                        
                        FROM ejercicio1_1 j
                        LEFT JOIN Poblacion p   
@@ -384,6 +385,8 @@ ejercicio4_2 = con.execute("""
 
 ###GRAFICOS###
 
+ruta_graficos = "C://Users//libso//OneDrive//Escritorio//ubaTarea//Labo_de_datos//TP1_labo_de_datos//ENTREGA//Graficos//"
+
 #1 Cantidad de BP por Provincia
 
 graf1_1 = con.execute("""
@@ -401,20 +404,46 @@ graf1_1 = con.execute("""
 """).fetchdf()
 
 
-plt.figure(figsize=(12,6))  # tamaño ancho x alto
+# Armamamos un grafico de barras relacionando las Provincias con la cantidad de BP en cada una
 
+plt.figure(figsize=(12,6))  
 plt.bar(graf1_1['Provincia'], graf1_1['Cantidad BP por Provincia'])
-
 plt.title('Cantidad BP por Provincia', fontsize=16)
 plt.xlabel('Provincia', fontsize=14)
 plt.ylabel('Cantidad BP', fontsize=14)
-
-plt.xticks(rotation=45, ha='right', fontsize=12)  # rotar etiquetas 45° y alinearlas a la derecha
-
+plt.xticks(rotation=45, ha='right', fontsize=12)  #Rotamos las etiquetas para que sean mas legibles
 plt.yticks(fontsize=12)
 
-plt.grid(axis='y', linestyle='--', alpha=0.7)  # líneas guía horizontales
+plt.grid(axis='y', linestyle='--', alpha=0.7)  #Grilla horizontal
 
+#2
+
+#Hcemos tabla que me devuelva la provincia, el departamento y la cantidad de BP y EE cada mil habitantes usando la tabla del ejercicio 3.2
+
+ej2_4 = con.execute("""
+        SELECT Provincia, 
+        Departamento, 
+        ROUND((Cant_BP / Poblacion) * 1000.0, 2) AS bp_cada_mil, 
+        ROUND((Cant_EE / Poblacion) * 1000.0, 2) AS ee_cada_mil
+        FROM ejercicio3_2
+        ORDER BY Provincia ASC, Departamento ASC;
+        """).fetchdf()
+
+
+#Hacemos un gráfico de disperción donde cada punto es un departamento representado con el color de su provincia. En el eje X figura la proporción de BP cada mil habitantes, y en el eje Y la proporción de EE cada mil habitantes.
+plt.figure(figsize=(10, 6))
+sns.scatterplot(data=ej2_4,
+                x="bp_cada_mil",
+                y="ee_cada_mil",
+                hue="Provincia",
+                s=25)
+
+plt.title("Relación entre BP y EE cada mil habitantes")
+plt.xlabel("BP cada mil habitantes")
+plt.ylabel("EE cada mil habitantes")
+plt.grid(True)
+plt.tight_layout()
+plt.legend(title="Provincia", bbox_to_anchor=(1.05, 1), loc='upper left')
 
 #3 
 
@@ -426,8 +455,8 @@ graf3_1 =  con.execute("""
                      FROM (
                       SELECT 
                           id_departamento,
-                          COUNT(*) AS cant_depto
-                     FROM Establecimientos
+                          COUNT(*) AS cant_depto     
+                     FROM Establecimientos      --Contamos las filas agrupadas por departamento para determinar la cantidad de EE por departamentos
                      GROUP BY id_departamento
                      ) e
                      JOIN Departamentos d
@@ -436,23 +465,26 @@ graf3_1 =  con.execute("""
 """).fetchdf()
 
 
-# Agarro todas las provincias salvo Ciudad de Buenos Aires
+# Agarramos todas las provincias salvo Ciudad de Buenos Aires. 
+# Debido a que como esta Provincia tiene un valor singular no nos beneficia hacer un analisis boxplot para ella. 
+# Ademas hace mas ilegible el grafico. Ver como agregamos su valor con un *.  
+
 provincias = graf3_1['Provincia'].unique()
 provincias_filtradas = [prov for prov in provincias if prov != 'Ciudad de Buenos Aires'] 
 
-# Agrupar datos por provincia filtrada
+# Agrupamos datos por provincia filtrada 
 data_por_provincia = {
     prov: graf3_1.loc[graf3_1['Provincia'] == prov, 'Cantidad EE por Departamento'].dropna().values
     for prov in provincias_filtradas
 }
 
-# Ordenar provincias por mediana
+# Ordenamos provincias segun su mediana
 provincias_ordenadas = sorted(provincias_filtradas, key=lambda p: np.median(data_por_provincia[p]))
 
-# Crear lista con los datos en orden correcto
+# Creamos una nueva lista ahora con el orde dado por las medianas
 data_ordenada = [data_por_provincia[prov] for prov in provincias_ordenadas]
 
-# Graficar boxplot horizontal
+# Armamos el grafico
 plt.figure(figsize=(14, len(provincias_ordenadas)*0.4))
 plt.boxplot(data_ordenada, labels=provincias_ordenadas, vert=False)
 plt.xlabel("Cantidad EE por Departamento")
@@ -460,7 +492,53 @@ plt.ylabel("Provincias*", fontsize = 14)
 plt.title("Cantidad EE por Departamento por Provincia", fontsize = 14)
 plt.grid(axis='x', linestyle='--', alpha=1)
 plt.grid(axis='y', linestyle='--', alpha=1)
-plt.figtext(0.05, 0.01, "*Ciudad de Buenos Aires: 2753", ha="left", fontsize=12, style="italic")
-
+plt.figtext(0.05, 0.01, "*Ciudad de Buenos Aires: 2753", ha="left", fontsize=12, style="italic") # Aca el agregado del valor atipico de Ciudad de Buenos Aires
 plt.tight_layout()
 plt.show()
+
+#4
+
+
+#Usamos la tabla del ejercicio 1 de SQL:,
+df = ejercicio1_2
+
+#Hacemos un DataFrame vacío para ir acumulando nuestros datos para el gráfico,
+df_long = pd.DataFrame()
+#Defino cuales son los niveles educativos para guardar su respectiva información.,
+niveles = ['Jardines', 'Primarias', 'Secundarias']
+#ahora buscamos la data para cada nivel en la tabla del ejercicio 1,
+for nivel in niveles:
+    df_nivel = pd.DataFrame({
+        'Provincia': df['Provincia'],
+        'Departamento': df['Departamento'],
+        'Nivel': nivel,
+        'Cantidad_EE': df[f'{nivel}'] , # Cantidad de EE del nivel educativo
+        'Población': df[f"Poblacion {nivel}"] # Población correspondiente a ese nivel
+
+    })
+    df_long = pd.concat([df_long, df_nivel], ignore_index=True)
+
+#Gráficamo,
+plt.figure(figsize=(10, 6))
+#Vamos a usar un gráfico de dispersión, ya que es el que mejor se amolda para representar las variables que nos piden:,
+sns.scatterplot(
+    data=df_long,
+    x='Población', # Notemos que en el gráfico para que sea legible la poblacion se toma en millones 
+    y='Cantidad_EE', 
+    hue='Nivel', # Cada nivel educativo tiene su respectivo color
+    palette='Set1', # color de los puntos 
+    s=100 # tamaño de los puntos
+)
+plt.title('Cantidad de EE en función de la Población') # Título del gráfico
+plt.xlabel('Población (millones)') # Nombre eje x
+plt.ylabel('Cantidad de EE') # Nombre eje y 
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+
+
+
+
+
+
