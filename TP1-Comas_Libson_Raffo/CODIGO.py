@@ -16,7 +16,7 @@ Created on Thu May 15 13:40:25 2025
 
 # Materia: Laboratorio de Datos
 # Fecha: 21/05/2025
-# Nombre del Grupo: Andate Riquelme
+# Nombre del Grupo: B.O.B
 # Integrantes: Pedro Raffo, Felipe Comas y Tomás Libson
 
 # En el Codigo partimos desde 6 tablas: 4 de poblacion (distinguidas por grupo etario), Establecimientos Educativos (EE) y Bibliotecas Populares (BP).
