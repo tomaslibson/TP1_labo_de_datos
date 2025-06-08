@@ -43,6 +43,7 @@ con = duckdb.connect()
 #GE_JARDIN
 Jardin = pd.read_excel(carpeta+ "GE_Jardin.xlsX", header = 10)  #le saco el titulo de la tabla y demas informacion inutil
 
+test = Jardin.copy()
 
 Jardin = Jardin.drop(Jardin.columns[0], axis =1) #Acomodamos para nombrar las columnas
 
