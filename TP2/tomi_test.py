@@ -52,7 +52,7 @@ fig.suptitle("Imágenes Promedio por Clase", fontsize=16)
 
 for i, ax in enumerate(axes.flat):
     imagen_promedio = heatmap_clases.iloc[i].values.reshape(28, 28)
-    sns.heatmap(imagen_promedio, ax=ax, cmap="grey", cbar= False)
+    sns.heatmap(imagen_promedio, ax=ax, cmap="magma", cbar= False)
     ax.set_title(f"Clase {i}")
 
 #%% Heatmap desviacion estandar
@@ -63,7 +63,7 @@ imagenes_clase_5 = data_df[data_df['label'] == 5].drop('label', axis=1).values
 desviacion = np.std(imagenes_clase_5, axis=0).reshape(28, 28)
 
 plt.figure(figsize=(6, 5))
-sns.heatmap(desviacion, cmap="magma")
+sns.heatmap(desviacion, cmap="magma", cbar = False)
 plt.title("Desviación estándar por píxel - Clase 5")
 plt.xlabel("Columna")
 plt.ylabel("Fila")
