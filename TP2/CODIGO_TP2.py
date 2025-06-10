@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 """
 Created on Sat Jun  7 16:42:05 2025
@@ -28,20 +29,7 @@ import duckdb
 carpeta = "C:\\Users\\libso\\OneDrive\\Escritorio\\ubaTarea\\Labo_de_datos\\"
 
 data_df = pd.read_csv(carpeta + "Fashion-MNIST.csv", index_col=0)
-print(data_df.head())
 
-
-#%% Select single image and convert to 28x28 array
-
-img_nbr = 1
-
-# keep label out
-img = np.array(data_df.iloc[img_nbr,:-1]).reshape(28,28)
-
-
-#%% Plot image
-
-plt.imshow(img, cmap = "gray")
 
 
 #%% Ejercicio 1
@@ -210,4 +198,3 @@ for k in valores_k:
         
         Precision = precision_score(tp, tn, fp, fn) * 100 
         tabla_precision.loc[fila, k] = Precision
-

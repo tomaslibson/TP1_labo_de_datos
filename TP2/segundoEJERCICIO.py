@@ -55,7 +55,7 @@ plt.show()
 #%%
 # ej 2 
 # A)
-import duckdb
+
 
 # Creamos un nuevo dataframe que incluya solo a las clases 0 y 8
 df_binario = duckdb.query("""
