@@ -228,7 +228,5 @@ fig.suptitle("Hetmap Clases 0 y 8", fontsize=14)
 for i, ax in enumerate(axes.flat):
     imagen_promedio = heatmap_clases.iloc[i].values.reshape(28, 28)
     sns.heatmap(imagen_promedio, ax=ax, cmap="magma", cbar=False)
-    ax.set_title(f"Clase {i}")
+    ax.set_title(f"Clase {int(i/8 * 64)}")
 
-
-    
