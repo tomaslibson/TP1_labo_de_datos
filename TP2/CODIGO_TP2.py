@@ -215,4 +215,19 @@ for t in lista_tablas:
     t["prom_sub"] = t.mean(axis=1)
     t.loc["prom_k"] = t.mean(axis=0)
     t.loc["prom_k", "prom_sub"] = np.nan
+
+#%% Grafico ejercicio 2 (Heatmaps clases 0 y 8)
+
+
+heatmap_clases = dataset_filtrado.groupby("label").mean()
+
+fig, axes = plt.subplots(1, 2, figsize=(10, 7)) 
+fig.suptitle("Hetmap Clases 0 y 8", fontsize=14)
+
+for i, ax in enumerate(axes.flat):
+    imagen_promedio = heatmap_clases.iloc[i].values.reshape(28, 28)
+    sns.heatmap(imagen_promedio, ax=ax, cmap="magma", cbar=False)
+    ax.set_title(f"Clase {i}")
+
+
     
