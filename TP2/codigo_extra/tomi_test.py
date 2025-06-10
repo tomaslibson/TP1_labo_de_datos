@@ -195,9 +195,9 @@ def precision_score(tp, tn, fp, fn):
 #Hacemos que para cada valor de k se analicen todos los subconjuntos. 
 for k in valores_k:
     modelo = KNeighborsClassifier(k)
-    for sub, test, fila in zip(lista_subconjuntos_flat, lista_test_flat, nombres_subconjuntos):
-        modelo.fit(sub, C_train)
-        Predicciones = modelo.predict(test)
+    for sub_train, sub_test, fila in zip(lista_subconjuntos_flat, lista_test_flat, nombres_subconjuntos):
+        modelo.fit(sub_train, C_train)
+        Predicciones = modelo.predict(sub_test)
         
         tp, tn, fp, fn = matriz_confusion_binaria(C_test, Predicciones)
         
