@@ -202,10 +202,10 @@ for k in valores_k:
         tp, tn, fp, fn = matriz_confusion_binaria(C_test, Predicciones)
         
         #Para cada iteracion guardamos los porcentajes de Exactitud y Precision en la tablas comparativas. 
-        Exactitud = accuracy_score(tp, tn, fp, fn) * 100 
+        Exactitud = accuracy_score(tp, tn, fp, fn)  
         tabla_exactitud.loc[fila, k] = Exactitud
         
-        Precision = precision_score(tp, tn, fp, fn) * 100 
+        Precision = precision_score(tp, tn, fp, fn) 
         tabla_precision.loc[fila, k] = Precision
         
 
@@ -214,4 +214,4 @@ for t in lista_tablas:
     t["prom_sub"] = t.mean(axis=1)
     t.loc["prom_k"] = t.mean(axis=0)
     t.loc["prom_k", "prom_sub"] = np.nan
-    
+
