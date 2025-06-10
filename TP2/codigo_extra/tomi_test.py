@@ -28,20 +28,7 @@ import duckdb
 carpeta = "C:\\Users\\libso\\OneDrive\\Escritorio\\ubaTarea\\Labo_de_datos\\"
 
 data_df = pd.read_csv(carpeta + "Fashion-MNIST.csv", index_col=0)
-print(data_df.head())
 
-
-#%% Select single image and convert to 28x28 array
-
-img_nbr = 1
-
-# keep label out
-img = np.array(data_df.iloc[img_nbr,:-1]).reshape(28,28)
-
-
-#%% Plot image
-
-plt.imshow(img, cmap = "gray")
 
 
 #%% Ejercicio 1
@@ -51,11 +38,11 @@ plt.imshow(img, cmap = "gray")
 #Agrupamos por clase y calculamos promedio
 heatmap_clases = data_df.groupby("label").mean()
 
-#Mostrar heatmaps para cada clase
 fig, axes = plt.subplots(2, 5, figsize=(15, 6))
 fig.suptitle("Imágenes Promedio por Clase", fontsize=16)
 
 for i, ax in enumerate(axes.flat):
+    #un heatmap por cada clase
     imagen_promedio = heatmap_clases.iloc[i].values.reshape(28, 28)
     sns.heatmap(imagen_promedio, ax=ax, cmap="magma", cbar= False)
     ax.set_title(f"Clase {i}")
@@ -122,20 +109,22 @@ else:
 ### B) ###
 
 Atributos = dataset_filtrado.drop(columns=["label"])
-Atributos = Atributos.to_numpy() #pasamos atributos a numpy para poder usar reshape indexar pixeles deseados de manera mas simple
+#Pasamos atributos a numpy para poder usar reshape indexar pixeles deseados de manera mas simple
+Atributos = Atributos.to_numpy() 
 Atributos = Atributos.reshape(-1, 28, 28)
 
 Clases = dataset_filtrado["label"]
 
-
+#Armamos los train- y los test-set. Fijamos el random_state para que no se altere con cada ejecucion.
 A_train, A_test, C_train, C_test = train_test_split(Atributos, Clases, test_size=0.2, random_state= 1) 
 
 
 ### C) ###
 
-#Analisis manga corta
+#Analisis del espacio en "negro" que deja la manga corta de la clase 0. Pixeles que se encuentran "ocupados" en la clase 8.
 
 sub_a = A_train[:, 12:, 0:7]
+#Para cada subconjuntos re indexamos su test
 test_a = A_test[:, 12:, 0:7]
 
 sub_b = A_train[:, 12:, 21:]
@@ -144,7 +133,7 @@ test_b = A_test[:, 12:, 21:]
 sub_c = A_train[:, 14:21, np.r_[3:7, 21:25]]
 test_c = A_test[:, 14:21, np.r_[3:7, 21:25]]
 
-#Analisis hombros 
+#Analisis del espacio en "ocupados" por los hombros de las remeras. Pixeles "desocupados" en la clase 8
 sub_d = A_train[:, 0:7, 0:10]
 test_d = A_test[:, 0:7, 0:10]
 
@@ -157,16 +146,22 @@ test_f = A_test[:, 0:7, 14:17]
 lista_subconjuntos = [sub_a, sub_b, sub_c, sub_d, sub_e, sub_f]
 lista_test = [test_a, test_b, test_c, test_d, test_e, test_f]
 
+#Aplanamos los subconjuntos para que el modelo pueda procesarlos.
 lista_subconjuntos_flat = [sub.reshape(sub.shape[0], -1) for sub in lista_subconjuntos]
-lista_test_flat = [test.reshape(test.shape[0], -1) for test in lista_test]    #volvemos a aplanar para que lo pueda ejecutar el modelo
+lista_test_flat = [test.reshape(test.shape[0], -1) for test in lista_test]    
 
 
 nombres_subconjuntos = ['sub_a', 'sub_b', 'sub_c', 'sub_d', 'sub_e', 'sub_f']
+#Seleccionamos valores de k con los uqe decidimos experimentar. 
 valores_k = [1, 3, 5, 7, 9]
 
+#Iniciamos tablas comparativas de Precision y Exactitud
 tabla_precision = pd.DataFrame(index=nombres_subconjuntos, columns=valores_k)
 tabla_exactitud = pd.DataFrame(index=nombres_subconjuntos, columns=valores_k)
+#Armamos una lista con las tablas para agregarle los promedios de manera mas efectiva.
+lista_tablas = [tabla_precision, tabla_exactitud]
 
+#Funciones para obtener metricas de evaluacion. 
 def matriz_confusion_binaria(y_test, y_pred):
     y_test = np.array(y_test)
     y_pred = np.array(y_pred)
@@ -197,6 +192,7 @@ def precision_score(tp, tn, fp, fn):
     prec = tp/(tp+fp)
     return prec
 
+#Hacemos que para cada valor de k se analicen todos los subconjuntos. 
 for k in valores_k:
     modelo = KNeighborsClassifier(k)
     for sub, test, fila in zip(lista_subconjuntos_flat, lista_test_flat, nombres_subconjuntos):
@@ -205,9 +201,17 @@ for k in valores_k:
         
         tp, tn, fp, fn = matriz_confusion_binaria(C_test, Predicciones)
         
+        #Para cada iteracion guardamos los porcentajes de Exactitud y Precision en la tablas comparativas. 
         Exactitud = accuracy_score(tp, tn, fp, fn) * 100 
         tabla_exactitud.loc[fila, k] = Exactitud
         
         Precision = precision_score(tp, tn, fp, fn) * 100 
         tabla_precision.loc[fila, k] = Precision
+        
 
+#Agregamos promedios por valores de k y por subconjuntos.
+for t in lista_tablas:
+    t["prom_sub"] = t.mean(axis=1)
+    t.loc["prom_k"] = t.mean(axis=0)
+    t.loc["prom_k", "prom_sub"] = np.nan
+    
