@@ -110,7 +110,7 @@ else:
 ### B) ###
 
 Atributos = dataset_filtrado.drop(columns=["label"])
-#Pasamos atributos a numpy para poder usar reshape indexar pixeles deseados de manera mas simple
+#Pasamos atributos a numpy para poder usar reshape e indexar pixeles deseados de manera mas simple
 Atributos = Atributos.to_numpy() 
 Atributos = Atributos.reshape(-1, 28, 28)
 
