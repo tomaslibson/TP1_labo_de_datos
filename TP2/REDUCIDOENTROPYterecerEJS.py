@@ -34,9 +34,9 @@ def accuracy_score(conf):
     return correcto / total
 
 #%% Cargamos los datos
-df = pd.read_csv("Fashion-MNIST.csv")
-X = df.drop("label", axis=1)
-y = df["label"]
+data_df = pd.read_csv("Fashion-MNIST.csv")
+X = data_df.drop("label", axis=1)
+y = data_df["label"]
 
 #%% Separamos entre dev, eval y held-out
 X_dev, X_eval, y_dev, y_eval = train_test_split(X, y, test_size=0.1, random_state=1)
