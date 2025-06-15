@@ -1,36 +1,63 @@
+# Nombres: Felipe Comas, Pedro Raffo y Tomas Libson
 
-# -*- coding: utf-8 -*-
-"""
-Created on Sat Jun  7 16:42:05 2025
+# Nombre y numero : "B.O.B" , 02 
 
-@author: libso
-"""
+# EL archivo contiene los experimentos realizados para los distintos 
+# modelos descriptos por el enunciado y la construccion de
+# graficos/tablas descriptos en el infrome.
 
-#!/usr/bin/env python
-# coding: utf-8
-
-# Visualizar imágenes
-
-
-#%% Import
-
+#%% Imports
+import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.model_selection import train_test_split
-from sklearn import metrics
+from sklearn.model_selection import train_test_split, KFold
+from sklearn import metrics, tree
 import duckdb
 
 
-#%% Load dataset 
+#%% Carga de datos 
 
-carpeta = "C:\\Users\\libso\\OneDrive\\Escritorio\\ubaTarea\\Labo_de_datos\\"
+carpeta = os.path.dirname(os.path.abspath(__file__))
 
-data_df = pd.read_csv(carpeta + "Fashion-MNIST.csv", index_col=0)
+ruta_archivo = os.path.join(carpeta, "Fashion-MNIST.csv")
 
+data_df = pd.read_csv(ruta_archivo, index_col=0)
 
+#%% Funciones 
+
+#Funciones para obtener metricas de evaluacion. 
+def matriz_confusion_binaria(y_test, y_pred):
+    y_test = np.array(y_test)
+    y_pred = np.array(y_pred)
+    
+    tp = 0
+    fp = 0
+    tn = 0
+    fn = 0
+    for i in range(len(y_test)):
+        if y_test[i]:
+            if y_pred[i]:
+                tp += 1
+            else:
+                fn += 1
+        else:
+            if y_pred[i]:
+                fp += 1
+            else:
+                tn += 1
+    
+    return tp, tn, fp, fn
+
+def accuracy_score(tp, tn, fp, fn):
+    acc = (tp+tn)/(tp+tn+fp+fn)
+    return acc
+
+def precision_score(tp, tn, fp, fn):
+    prec = tp/(tp+fp)
+    return prec
 
 #%% Ejercicio 1
 
@@ -77,6 +104,8 @@ plt.suptitle("Ejemplos de la Clase 7 (Zapatilla)")
 plt.tight_layout()
 plt.show()
 
+
+
 #%%Ejercicio 2
 
 
@@ -102,10 +131,6 @@ if abs(cant_prendas_clase[0] - cant_prendas_clase[8]) <= 0.05 * max(cant_prendas
     print("El subconjunto esta aproximadamente balanceado")
 else:
     print("El subconjunto no esta balanceado")
-
-#GEPETTO EXPLICATIONE
-#¿Por qué 5%?
-#Es un criterio común en aprendizaje automático para evaluar si el desequilibrio es lo suficientemente pequeño como para no requerir técnicas de re-muestreo
 
 ### B) ###
 
@@ -162,36 +187,7 @@ tabla_exactitud = pd.DataFrame(index=nombres_subconjuntos, columns=valores_k)
 #Armamos una lista con las tablas para agregarle los promedios de manera mas efectiva.
 lista_tablas = [tabla_precision, tabla_exactitud]
 
-#Funciones para obtener metricas de evaluacion. 
-def matriz_confusion_binaria(y_test, y_pred):
-    y_test = np.array(y_test)
-    y_pred = np.array(y_pred)
-    
-    tp = 0
-    fp = 0
-    tn = 0
-    fn = 0
-    for i in range(len(y_test)):
-        if y_test[i]:
-            if y_pred[i]:
-                tp += 1
-            else:
-                fn += 1
-        else:
-            if y_pred[i]:
-                fp += 1
-            else:
-                tn += 1
-    
-    return tp, tn, fp, fn
 
-def accuracy_score(tp, tn, fp, fn):
-    acc = (tp+tn)/(tp+tn+fp+fn)
-    return acc
-
-def precision_score(tp, tn, fp, fn):
-    prec = tp/(tp+fp)
-    return prec
 
 #Hacemos que para cada valor de k se analicen todos los subconjuntos. 
 for k in valores_k:
@@ -210,14 +206,13 @@ for k in valores_k:
         tabla_precision.loc[fila, k] = Precision
         
         
-
 #Agregamos promedios por valores de k y por subconjuntos.
 for t in lista_tablas:
     t["prom_sub"] = t.mean(axis=1)
     t.loc["prom_k"] = t.mean(axis=0)
     t.loc["prom_k", "prom_sub"] = np.nan
 
-#%% Grafico ejercicio 2 (Heatmaps clases 0 y 8)
+#%% Grafico ejercicio 2
 
 
 heatmap_clases = dataset_filtrado.groupby("label").mean()

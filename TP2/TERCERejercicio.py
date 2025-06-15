@@ -33,7 +33,12 @@ def accuracy_score(conf):
     return correcto / total
 
 #%% Cargamos los datos
-df = pd.read_csv("Fashion-MNIST.csv")
+
+carpeta = "C:\\Users\\libso\\OneDrive\\Escritorio\\ubaTarea\\Labo_de_datos\\"
+
+df = pd.read_csv(carpeta + "Fashion-MNIST.csv", index_col=0)
+
+
 X = df.drop("label", axis=1)
 y = df["label"]
 
